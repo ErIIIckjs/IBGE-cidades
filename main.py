@@ -10,6 +10,7 @@ import json
 import csv
 import os
 
+
 app = Flask(__name__)
 
 # Arquivo para armazenar o histórico de consultas
