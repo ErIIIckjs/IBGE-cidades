@@ -4,8 +4,141 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comparador de Cidades IBGE</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .cidades-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .cidade-btn {
+            padding: 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .cidade-btn:hover {
+            background: #2980b9;
+        }
+        .btn-todas {
+            background: #9b59b6;
+        }
+        .btn-todas:hover {
+            background: #8e44ad;
+        }
+        .btn-download {
+            background: #27ae60;
+        }
+        .btn-download:hover {
+            background: #219653;
+        }
+        .btn-historico {
+            background: #e67e22;
+        }
+        .btn-historico:hover {
+            background: #d35400;
+        }
+        .btn-limpar {
+            background: #e74c3c;
+        }
+        .btn-limpar:hover {
+            background: #c0392b;
+        }
+        .resultado {
+            margin-top: 30px;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 5px;
+            display: none;
+        }
+        .dados-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 3px;
+        }
+        .comparacao-tabela {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .comparacao-tabela th, .comparacao-tabela td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .comparacao-tabela th {
+            background-color: #3498db;
+            color: white;
+        }
+        .comparacao-tabela tr:hover {
+            background-color: #f5f5f5;
+        }
+        .loading {
+            text-align: center;
+            color: #7f8c8d;
+            margin: 20px 0;
+        }
+        .link-externo {
+            color: #3498db;
+            text-decoration: none;
+        }
+        .link-externo:hover {
+            text-decoration: underline;
+        }
+        .acoes-container {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        .btn-acao {
+            padding: 12px 20px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .historico-tabela {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .historico-tabela th, .historico-tabela td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .historico-tabela th {
+            background-color: #7f8c8d;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -52,10 +185,16 @@
     </div>
 
     <script>
+        // URL base para API - funciona local e no Render
+        const API_BASE = window.location.origin;
+
         function buscarDados(cidade) {
             showLoading(true);
-            fetch(`/dados/${cidade}`)
-                .then(response => response.json())
+            fetch(`${API_BASE}/dados/${cidade}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro no servidor');
+                    return response.json();
+                })
                 .then(data => {
                     showLoading(false);
                     if (data.success) {
@@ -66,14 +205,17 @@
                 })
                 .catch(error => {
                     showLoading(false);
-                    alert('Erro na requisição: ' + error);
+                    alert('Erro na requisição: ' + error.message);
                 });
         }
 
         function buscarTodas() {
             showLoading(true);
-            fetch('/todas_cidades')
-                .then(response => response.json())
+            fetch(`${API_BASE}/todas_cidades`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro no servidor');
+                    return response.json();
+                })
                 .then(data => {
                     showLoading(false);
                     if (data.success) {
@@ -84,18 +226,21 @@
                 })
                 .catch(error => {
                     showLoading(false);
-                    alert('Erro na requisição: ' + error);
+                    alert('Erro na requisição: ' + error.message);
                 });
         }
 
         function downloadCSV() {
-            window.open('/download/csv', '_blank');
+            window.open(`${API_BASE}/download/csv`, '_blank');
         }
 
         function verHistorico() {
             showLoading(true);
-            fetch('/historico')
-                .then(response => response.json())
+            fetch(`${API_BASE}/historico`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro no servidor');
+                    return response.json();
+                })
                 .then(data => {
                     showLoading(false);
                     if (data.success) {
@@ -106,24 +251,29 @@
                 })
                 .catch(error => {
                     showLoading(false);
-                    alert('Erro na requisição: ' + error);
+                    alert('Erro na requisição: ' + error.message);
                 });
         }
 
         function limparHistorico() {
             if (confirm('Tem certeza que deseja limpar todo o histórico?')) {
-                fetch('/limpar_historico', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('Histórico limpo com sucesso!');
-                            document.getElementById('resultado').innerHTML = '';
-                            document.getElementById('resultado').style.display = 'none';
-                        }
-                    })
-                    .catch(error => {
-                        alert('Erro ao limpar histórico: ' + error);
-                    });
+                fetch(`${API_BASE}/limpar_historico`, { 
+                    method: 'POST' 
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro no servidor');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Histórico limpo com sucesso!');
+                        document.getElementById('resultado').innerHTML = '';
+                        document.getElementById('resultado').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    alert('Erro ao limpar histórico: ' + error.message);
+                });
             }
         }
 
@@ -158,7 +308,6 @@
             const resultadoDiv = document.getElementById('resultado');
             let html = `<h2>📊 Comparação entre Cidades</h2>`;
             
-            // Criar tabela de comparação
             html += `
                 <table class="comparacao-tabela">
                     <thead>
@@ -194,11 +343,7 @@
                 }
             }
             
-            html += `
-                    </tbody>
-                </table>
-            `;
-            
+            html += `</tbody></table>`;
             resultadoDiv.innerHTML = html;
             resultadoDiv.style.display = 'block';
         }
@@ -207,20 +352,12 @@
             const resultadoDiv = document.getElementById('resultado');
             
             if (historico.length === 0) {
-                resultadoDiv.innerHTML = `
-                    <h2>📋 Histórico de Consultas</h2>
-                    <p>Nenhuma consulta realizada ainda.</p>
-                `;
+                resultadoDiv.innerHTML = `<h2>📋 Histórico de Consultas</h2><p>Nenhuma consulta realizada ainda.</p>`;
                 resultadoDiv.style.display = 'block';
                 return;
             }
             
-            let html = `
-                <h2>📋 Histórico de Consultas</h2>
-                <p>Total de registros: ${historico.length}</p>
-            `;
-            
-            // Criar tabela de histórico
+            let html = `<h2>📋 Histórico de Consultas</h2><p>Total de registros: ${historico.length}</p>`;
             html += `
                 <table class="historico-tabela">
                     <thead>
@@ -247,20 +384,14 @@
                 `;
             }
             
-            html += `
-                    </tbody>
-                </table>
-            `;
-            
+            html += `</tbody></table>`;
             resultadoDiv.innerHTML = html;
             resultadoDiv.style.display = 'block';
         }
 
         function showLoading(show) {
             document.getElementById('loading').style.display = show ? 'block' : 'none';
-            if (!show) {
-                document.getElementById('resultado').style.display = 'block';
-            }
+            if (!show) document.getElementById('resultado').style.display = 'block';
         }
     </script>
 </body>
