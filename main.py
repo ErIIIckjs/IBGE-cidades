@@ -9,9 +9,12 @@ import time
 import json
 import csv
 import os
-
+import chromedriver_autoinstaller  # Adicione esta importação
 
 app = Flask(__name__)
+
+# Configuração para o Render
+IS_RENDER = os.environ.get('RENDER', False)
 
 # Arquivo para armazenar o histórico de consultas
 HISTORICO_FILE = 'historico_consultas.json'
@@ -25,7 +28,13 @@ class IBGEScraper:
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--window-size=1920,1080')
         chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-
+        
+        # Configuração específica para o Render
+        if IS_RENDER:
+            chrome_options.binary_location = "/usr/bin/google-chrome"
+            # Instala o ChromeDriver automaticamente
+            chromedriver_autoinstaller.install()
+        
         self.driver = webdriver.Chrome(options=chrome_options)
         self.wait = WebDriverWait(self.driver, 15)
 
@@ -34,7 +43,7 @@ class IBGEScraper:
         try:
             print(f"🌐 Acessando: {url}")
             self.driver.get(url)
-            time.sleep(5)  # Aumentei o tempo para garantir carregamento
+            time.sleep(5)
             return True
         except Exception as e:
             print(f"❌ Erro ao acessar {url}: {e}")
@@ -233,6 +242,7 @@ def download_csv():
     # Criar arquivo CSV temporário
     filename = f"dados_ibge_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     
+    # CORREÇÃO: Especificar codificação UTF-8 com BOM para Excel
     with open(filename, 'w', newline='', encoding='utf-8-sig') as csvfile:
         fieldnames = ['cidade', 'localidade', 'populacao', 'ano_censo', 'url', 'timestamp_consulta', 'timestamp_dados']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -268,4 +278,5 @@ def limpar_historico():
     return jsonify({'success': True, 'message': 'Histórico limpo com sucesso'})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=not IS_RENDER)

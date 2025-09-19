@@ -1,2 +1,4 @@
 Flask==2.3.3
-selenium==4.15.0
+selenium==4.15.2
+chromedriver-autoinstaller==0.6.0
+gunicorn==21.2.0
