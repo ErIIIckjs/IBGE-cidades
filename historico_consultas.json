@@ -1,0 +1,13 @@
+[
+  {
+    "cidade": "São Paulo",
+    "dados": {
+      "localidade": "Brasil São Paulo\nSão Paulo\nSelecionar local",
+      "populacao": "",
+      "ano_censo": "",
+      "timestamp": "2025-09-19T16:21:00.509832"
+    },
+    "url": "https://cidades.ibge.gov.br/brasil/sp/sao-paulo/panorama",
+    "timestamp_consulta": "2025-09-19T16:21:00.578891"
+  }
+]

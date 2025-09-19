@@ -2,14 +2,15 @@ from flask import Flask, render_template, request, jsonify, send_file
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service  # ← ADICIONE ESTA LINHA
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager  # ← ADICIONE ESTA LINHA
 from datetime import datetime
 import time
 import json
 import csv
 import os
-
 
 app = Flask(__name__)
 
@@ -25,8 +26,14 @@ class IBGEScraper:
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--window-size=1920,1080')
         chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-
-        self.driver = webdriver.Chrome(options=chrome_options)
+        
+        # SUBSTITUA ESTA LINHA:
+        # self.driver = webdriver.Chrome(options=chrome_options)
+        
+        # POR ISTO:
+        service = Service(ChromeDriverManager().install())
+        self.driver = webdriver.Chrome(service=service, options=chrome_options)
+        
         self.wait = WebDriverWait(self.driver, 15)
 
     def acessar_link(self, url):
