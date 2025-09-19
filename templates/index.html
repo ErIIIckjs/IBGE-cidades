@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparador de Cidades IBGE</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+    <div class="container">
+        <h1>🌎 Comparador de Cidades - IBGE</h1>
+        
+        <div class="cidades-grid">
+            <button class="cidade-btn" onclick="buscarDados('sao_paulo')">
+                São Paulo
+            </button>
+            <button class="cidade-btn" onclick="buscarDados('rio_de_janeiro')">
+                Rio de Janeiro
+            </button>
+            <button class="cidade-btn" onclick="buscarDados('belo_horizonte')">
+                Belo Horizonte
+            </button>
+            <button class="cidade-btn" onclick="buscarDados('salvador')">
+                Salvador
+            </button>
+            <button class="cidade-btn" onclick="buscarDados('fortaleza')">
+                Fortaleza
+            </button>
+            <button class="cidade-btn btn-todas" onclick="buscarTodas()">
+                Comparar Todas
+            </button>
+        </div>
+
+        <div class="acoes-container">
+            <button class="btn-acao btn-download" onclick="downloadCSV()">
+                📥 Baixar CSV
+            </button>
+            <button class="btn-acao btn-historico" onclick="verHistorico()">
+                📋 Ver Histórico
+            </button>
+            <button class="btn-acao btn-limpar" onclick="limparHistorico()">
+                🗑️ Limpar Histórico
+            </button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <p>⏳ Coletando dados... Isso pode levar alguns segundos.</p>
+        </div>
+
+        <div id="resultado" class="resultado"></div>
+    </div>
+
+    <script>
+        function buscarDados(cidade) {
+            showLoading(true);
+            fetch(`/dados/${cidade}`)
+                .then(response => response.json())
+                .then(data => {
+                    showLoading(false);
+                    if (data.success) {
+                        exibirResultado(data);
+                    } else {
+                        alert('Erro: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    showLoading(false);
+                    alert('Erro na requisição: ' + error);
+                });
+        }
+
+        function buscarTodas() {
+            showLoading(true);
+            fetch('/todas_cidades')
+                .then(response => response.json())
+                .then(data => {
+                    showLoading(false);
+                    if (data.success) {
+                        exibirComparacao(data.resultados);
+                    } else {
+                        alert('Erro: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    showLoading(false);
+                    alert('Erro na requisição: ' + error);
+                });
+        }
+
+        function downloadCSV() {
+            window.open('/download/csv', '_blank');
+        }
+
+        function verHistorico() {
+            showLoading(true);
+            fetch('/historico')
+                .then(response => response.json())
+                .then(data => {
+                    showLoading(false);
+                    if (data.success) {
+                        exibirHistorico(data.historico);
+                    } else {
+                        alert('Erro ao carregar histórico');
+                    }
+                })
+                .catch(error => {
+                    showLoading(false);
+                    alert('Erro na requisição: ' + error);
+                });
+        }
+
+        function limparHistorico() {
+            if (confirm('Tem certeza que deseja limpar todo o histórico?')) {
+                fetch('/limpar_historico', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Histórico limpo com sucesso!');
+                            document.getElementById('resultado').innerHTML = '';
+                            document.getElementById('resultado').style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        alert('Erro ao limpar histórico: ' + error);
+                    });
+            }
+        }
+
+        function exibirResultado(data) {
+            const resultadoDiv = document.getElementById('resultado');
+            let html = `
+                <h2>🏙️ ${data.cidade}</h2>
+                <p><strong>Fonte:</strong> <a href="${data.url}" class="link-externo" target="_blank">IBGE - ${data.cidade}</a></p>
+                <h3>Dados Demográficos:</h3>
+            `;
+
+            html += `
+                <div class="dados-item">
+                    <strong>Localidade:</strong> ${data.dados.localidade || 'N/A'}
+                </div>
+                <div class="dados-item">
+                    <strong>População:</strong> ${data.dados.populacao || 'N/A'}
+                </div>
+                <div class="dados-item">
+                    <strong>Ano do Censo:</strong> ${data.dados.ano_censo || 'N/A'}
+                </div>
+                <div class="dados-item">
+                    <strong>Data da Consulta:</strong> ${new Date(data.dados.timestamp).toLocaleString()}
+                </div>
+            `;
+
+            resultadoDiv.innerHTML = html;
+            resultadoDiv.style.display = 'block';
+        }
+
+        function exibirComparacao(resultados) {
+            const resultadoDiv = document.getElementById('resultado');
+            let html = `<h2>📊 Comparação entre Cidades</h2>`;
+            
+            // Criar tabela de comparação
+            html += `
+                <table class="comparacao-tabela">
+                    <thead>
+                        <tr>
+                            <th>Cidade</th>
+                            <th>Localidade</th>
+                            <th>População</th>
+                            <th>Ano do Censo</th>
+                            <th>Fonte</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            for (const [cidade, dados] of Object.entries(resultados)) {
+                if (dados.success) {
+                    html += `
+                        <tr>
+                            <td><strong>${cidade}</strong></td>
+                            <td>${dados.dados.localidade || 'N/A'}</td>
+                            <td>${dados.dados.populacao || 'N/A'}</td>
+                            <td>${dados.dados.ano_censo || 'N/A'}</td>
+                            <td><a href="${dados.url}" class="link-externo" target="_blank">Ver no IBGE</a></td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr>
+                            <td><strong>${cidade}</strong></td>
+                            <td colspan="4" style="color: red;">Erro: ${dados.error}</td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            resultadoDiv.innerHTML = html;
+            resultadoDiv.style.display = 'block';
+        }
+
+        function exibirHistorico(historico) {
+            const resultadoDiv = document.getElementById('resultado');
+            
+            if (historico.length === 0) {
+                resultadoDiv.innerHTML = `
+                    <h2>📋 Histórico de Consultas</h2>
+                    <p>Nenhuma consulta realizada ainda.</p>
+                `;
+                resultadoDiv.style.display = 'block';
+                return;
+            }
+            
+            let html = `
+                <h2>📋 Histórico de Consultas</h2>
+                <p>Total de registros: ${historico.length}</p>
+            `;
+            
+            // Criar tabela de histórico
+            html += `
+                <table class="historico-tabela">
+                    <thead>
+                        <tr>
+                            <th>Cidade</th>
+                            <th>Localidade</th>
+                            <th>População</th>
+                            <th>Ano</th>
+                            <th>Data da Consulta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            for (const registro of historico) {
+                html += `
+                    <tr>
+                        <td>${registro.cidade}</td>
+                        <td>${registro.dados.localidade || 'N/A'}</td>
+                        <td>${registro.dados.populacao || 'N/A'}</td>
+                        <td>${registro.dados.ano_censo || 'N/A'}</td>
+                        <td>${new Date(registro.timestamp_consulta).toLocaleString()}</td>
+                    </tr>
+                `;
+            }
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            resultadoDiv.innerHTML = html;
+            resultadoDiv.style.display = 'block';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            if (!show) {
+                document.getElementById('resultado').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
